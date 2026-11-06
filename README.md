@@ -131,6 +131,16 @@ GitHub → tu repo → **Settings → Secrets and variables → Actions → New 
 
 ---
 
+### ¿La instalas para otra familia? Pruébala y luego déjala como nueva
+
+1. Entra con el código de la casa y usa cualquier perfil (por ejemplo Papá, PIN `0000`, y crea un PIN temporal). Prueba en dos dispositivos a la vez para ver el tiempo real.
+2. Cuando termines, corre [`supabase/reset.sql`](supabase/reset.sql) en el SQL Editor: borra reservas y actividad de prueba, saca a **todos** los dispositivos (incluido el tuyo) y regresa los PINs a `0000`.
+3. Pásale a la familia la dirección y el código. Si no quieren que tú lo sepas, Papá o Mamá lo cambian en Ajustes → Seguridad.
+
+> Quien es dueño del proyecto de Supabase puede ver los datos desde su panel. Si la familia quiere ser la única dueña, Supabase y Vercel permiten **transferir el proyecto** a la cuenta de alguien de la familia.
+
+---
+
 ## 🔐 Cómo funciona la seguridad
 
 ```
