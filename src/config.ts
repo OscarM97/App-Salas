@@ -1,7 +1,18 @@
 const env = import.meta.env;
 
-export const SUPABASE_URL: string = (env.VITE_SUPABASE_URL ?? '').trim();
-export const SUPABASE_KEY: string = (env.VITE_SUPABASE_PUBLISHABLE_KEY ?? env.VITE_SUPABASE_ANON_KEY ?? '').trim();
+// También acepta los nombres que muestra el botón "Connect" de Supabase (NEXT_PUBLIC_…),
+// para poder pegar ese .env.local tal cual en Vercel.
+const pick = (...values: Array<string | undefined>) => (values.find((v) => v && v.trim()) ?? '').trim();
+
+export const SUPABASE_URL: string = pick(env.VITE_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_URL);
+export const SUPABASE_KEY: string = pick(
+  env.VITE_SUPABASE_ANON_KEY,
+  env.VITE_SUPABASE_PUBLISHABLE_KEY,
+  env.VITE_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+  env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+  env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY,
+  env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+);
 
 /** Sin Supabase configurado (o con VITE_DEMO=true) la app corre en modo demo local. */
 export const IS_DEMO: boolean = env.VITE_DEMO === 'true' || !SUPABASE_URL || !SUPABASE_KEY;

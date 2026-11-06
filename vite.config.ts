@@ -13,6 +13,8 @@ const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 
 
 export default defineConfig({
   base: embed ? './' : '/',
+  // VITE_… y también NEXT_PUBLIC_… (los nombres del botón "Connect" de Supabase).
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
