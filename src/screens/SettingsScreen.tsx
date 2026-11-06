@@ -586,7 +586,7 @@ function NotificationsSection() {
         <div className="flex items-start gap-3">
           <Bell className="mt-0.5 size-5 shrink-0 text-brand" aria-hidden />
           <p className="flex-1 text-sm text-muted">
-            Cada reserva, cambio o cancelación también se manda al grupo de la familia. Ej.: <i>“✅ Hijo 1 acaba de separar Sala Lounge para este sábado de 8pm a 12am”</i>.
+            Cada reserva, cambio o cancelación también se manda al grupo de la familia. Ej.: <i>“✅ Cecy acaba de separar Sala Abajo para este sábado de 8pm a 12am”</i>.
           </p>
           <Toggle checked={enabled} onChange={setEnabled} label="Activar avisos" />
         </div>

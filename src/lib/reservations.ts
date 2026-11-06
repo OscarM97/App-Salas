@@ -100,7 +100,7 @@ export function roomName(rooms: Map<string, Room>, id: string | null | undefined
   return (id && rooms.get(id)?.name) || fallback;
 }
 
-/** "Sala Principal / TV" → "TV", "Sala Lounge" → "Lounge". */
+/** "Sala Principal / TV" → "TV", "Sala Arriba" → "Arriba". */
 export function shortRoomName(name: string): string {
   const parts = name.split('/').map((s) => s.trim()).filter(Boolean);
   if (parts.length > 1) return parts[parts.length - 1] as string;

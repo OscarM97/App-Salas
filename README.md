@@ -13,13 +13,13 @@ PWA para que la familia **reserve las salas de la casa sin traslapes ni confusio
 
 | Requisito | Cómo quedó |
 |---|---|
-| **Selector rápido de perfil** | Pantalla “¿Quién eres?” con los 5 perfiles (Papá, Mamá, Hijo 1–3) + **PIN de 4 dígitos**. El celular recuerda tu perfil; no hay contraseñas que olvidar. |
-| **2 salas editables** | “Sala Principal / TV” y “Sala Lounge / Terraza” ya creadas. Papá/Mamá pueden renombrarlas, cambiar ícono/color o agregar más. |
+| **Selector rápido de perfil** | Pantalla “¿Quién eres?” con los 5 perfiles (Papá, Mamá, Cecy, Jorge y Andy) + **PIN de 4 dígitos**. El celular recuerda tu perfil; no hay contraseñas que olvidar. |
+| **2 salas editables** | “Sala Arriba” y “Sala Abajo” ya creadas. Papá/Mamá pueden renombrarlas, cambiar ícono/color o agregar más. |
 | **Disponibilidad en tiempo real** | Tarjetas **Libre (verde) / Ocupada (rojo)** “ahora mismo”, **timeline del día** por sala (bloques con el color de quien reservó) y **vista de 7 días**. Todo se actualiza solo en todos los celulares (Supabase Realtime). |
 | **Sin empalmes** | El formulario avisa del choque antes de enviar y sugiere *“Usar la otra sala (libre)”* o *“siguiente horario libre”*. Además, **Postgres lo hace imposible** con una restricción `EXCLUDE` (ni dos personas reservando al mismo milisegundo pueden encimarse). |
 | **Formulario de reserva** | Sala, día (hoy o cualquier fecha futura), hora inicio/fin (cruza medianoche: 10pm–1am), atajos de 1–4 h, *“Para qué”* y *“Con quién”* (ej. *Noche de pelis · con Sofía*). Se reserva a nombre del perfil activo. |
 | **Historial y cancelación** | Pestañas *Próximas / Mías / Historial*. Solo **quien creó la reserva o un admin** (Papá/Mamá) puede editarla o cancelarla. Si ya empezó: **“Liberar sala ahora”**. |
-| **Feed de actividad** | *“Hijo 1 separó Sala Lounge para este sábado de 8pm a 12am · Noche de pelis · con Sofía”*. Avisos emergentes cuando otra persona reserva y globito de “nuevo”. |
+| **Feed de actividad** | *“Cecy separó Sala Abajo para este sábado de 8pm a 12am · Noche de pelis · con Sofía”*. Avisos emergentes cuando otra persona reserva y globito de “nuevo”. |
 | **Webhook Telegram / WhatsApp** | Opcional, desde Ajustes: bot de **Telegram** (gratis, a un grupo) y/o **webhook** JSON (n8n, Make, Zapier, Discord, Slack…). Se envía desde la base de datos, sin servidor extra. |
 | **PWA** | Ícono en pantalla de inicio, pantalla completa, modo oscuro automático, funciona con mala señal (la app abre sin internet), aviso de “nueva versión”. |
 
@@ -105,16 +105,16 @@ Los avisos se mandan **desde Supabase** con la extensión `pg_net` (el script in
 3. Abre `https://api.telegram.org/bot<TOKEN>/getUpdates` y copia el `"chat":{"id": -100…}`.
 4. En la app: **Ajustes → Avisos** → pega token y chat ID → activa → **Guardar** → **Probar**.
 
-Llegarán mensajes como: `✅ Hijo 1 acaba de separar Sala Lounge / Terraza para este sábado de 8pm a 12am · Noche de pelis · con Sofía`.
+Llegarán mensajes como: `✅ Cecy acaba de separar Sala Abajo para este sábado de 8pm a 12am · Noche de pelis · con Sofía`.
 
 **WhatsApp / otros:** WhatsApp no tiene API gratuita para grupos. Usa el campo **Webhook**: la app hace `POST` con este JSON a la URL que pongas, y desde ahí lo reenvías con n8n, Make, Zapier, Pipedream, etc. (a WhatsApp Business, a CallMeBot para un número personal, a Discord, Slack…):
 
 ```json
 {
-  "text": "✅ Hijo 1 acaba de separar Sala Lounge / Terraza para este sábado de 8pm a 12am",
+  "text": "✅ Cecy acaba de separar Sala Abajo para este sábado de 8pm a 12am",
   "content": "(igual que text, para Discord)",
   "event": "reservation.created",
-  "data": { "owner_name": "Hijo 1", "room_name": "Sala Lounge / Terraza", "starts_at": "…", "ends_at": "…", "purpose": "…", "guests": "…" },
+  "data": { "owner_name": "Cecy", "room_name": "Sala Abajo", "starts_at": "…", "ends_at": "…", "purpose": "…", "guests": "…" },
   "created_at": "2026-11-06T23:10:00Z"
 }
 ```
@@ -184,7 +184,7 @@ Celular ──(1 vez) código de la casa──▶ sesión anónima de Supabase A
 │   ├── lib/
 │   │   ├── backend/            # Interfaz Backend + SupabaseBackend + DemoBackend (localStorage)
 │   │   ├── reservations.ts     # Traslapes, estado de salas, siguiente hueco libre, permisos
-│   │   ├── activity.ts         # Textos del feed ("Hijo 1 separó…")
+│   │   ├── activity.ts         # Textos del feed ("Cecy separó…")
 │   │   └── time.ts             # Formato "8pm", "este sábado", rangos que cruzan medianoche
 │   ├── hooks/                  # React Query, tiempo real, instalación PWA, router por hash
 │   ├── components/             # Timeline del día, vista semanal, formulario, tarjetas, PIN pad…

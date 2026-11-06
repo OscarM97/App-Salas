@@ -8,7 +8,7 @@ export interface ActivityView {
 }
 
 /**
- * Texto del feed: "Hijo 1 separó Sala Lounge para este sábado de 8pm a 12am · Noche de pelis · con Sofía".
+ * Texto del feed: "Cecy separó Sala Abajo para este sábado de 8pm a 12am · Noche de pelis · con Sofía".
  * Usa los nombres actuales (por id) y, si ya no existen, la foto guardada en el evento.
  */
 export function describeActivity(

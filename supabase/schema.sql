@@ -30,7 +30,7 @@ create temp table _setup as select
   '0000'::text                as initial_pin,  -- PIN inicial de TODOS los perfiles (al entrar se pide cambiarlo).
   'Mi casa'::text             as house_name,   -- Nombre que se ve arriba en la app.
   'America/Mexico_City'::text as timezone;     -- Zona horaria de la casa (para los avisos de Telegram/Webhook).
--- Los perfiles (Papá, Mamá, Hijo 1…) y las salas se definen en la sección 9.
+-- Los perfiles (Papá, Mamá, Cecy…) y las salas se definen en la sección 9.
 -- También puedes cambiarlos después desde la app → Ajustes.
 -- -----------------------------------------------------------------------------
 
@@ -277,6 +277,19 @@ as $$
       || case when extract(hour from p_ts at time zone p_tz) < 12 then 'am' else 'pm' end
 $$;
 
+-- "de 8pm a 10pm" o "todo el día" (12am a 12am del día siguiente)
+create or replace function private.fmt_span(p_start timestamptz, p_end timestamptz, p_tz text)
+returns text
+language sql stable set search_path = ''
+as $$
+  select case
+    when (p_start at time zone p_tz)::time = time '00:00'
+     and (p_end at time zone p_tz) = (p_start at time zone p_tz) + interval '1 day'
+    then 'todo el día'
+    else 'de ' || private.fmt_time(p_start, p_tz) || ' a ' || private.fmt_time(p_end, p_tz)
+  end
+$$;
+
 -- "hoy", "mañana", "este sábado", "el sábado 21 de noviembre"
 create or replace function private.fmt_day(p_ts timestamptz, p_tz text)
 returns text
@@ -329,7 +342,7 @@ declare
   extra   text := '';
 begin
   if s is not null and e is not null then
-    whn := private.fmt_day(s, p_tz) || ' de ' || private.fmt_time(s, p_tz) || ' a ' || private.fmt_time(e, p_tz);
+    whn := private.fmt_day(s, p_tz) || ' ' || private.fmt_span(s, e, p_tz);
   end if;
   if coalesce(d ->> 'purpose', '') <> '' then extra := extra || ' · ' || (d ->> 'purpose'); end if;
   if coalesce(d ->> 'guests', '')  <> '' then extra := extra || ' · con ' || (d ->> 'guests'); end if;
@@ -457,7 +470,7 @@ begin
   if found then
     perform private.fail(
       c.room_name || ' ya está ocupada por ' || c.owner_name || ' ' || private.fmt_day(c.starts_at, v_tz)
-        || ' de ' || private.fmt_time(c.starts_at, v_tz) || ' a ' || private.fmt_time(c.ends_at, v_tz) || '.',
+        || ' ' || private.fmt_span(c.starts_at, c.ends_at, v_tz) || '.',
       'room_conflict',
       jsonb_build_object('reservation_id', c.id, 'profile_id', c.profile_id, 'owner_name', c.owner_name,
                          'starts_at', c.starts_at, 'ends_at', c.ends_at, 'purpose', c.purpose));
@@ -1172,9 +1185,9 @@ select v.name, v.emoji, v.color, v.role, v.sort_order
 from (values
   ('Papá',   '👨', '#2563eb', 'admin',  1),
   ('Mamá',   '👩', '#db2777', 'admin',  2),
-  ('Hijo 1', '🧑', '#d97706', 'member', 3),
-  ('Hijo 2', '👦', '#7c3aed', 'member', 4),
-  ('Hijo 3', '👧', '#0891b2', 'member', 5)
+  ('Cecy', '🧑', '#d97706', 'member', 3),
+  ('Jorge', '👦', '#7c3aed', 'member', 4),
+  ('Andy', '👧', '#0891b2', 'member', 5)
 ) as v (name, emoji, color, role, sort_order)
 where not exists (select 1 from public.profiles);
 
@@ -1188,8 +1201,8 @@ where not exists (select 1 from private.pins x where x.profile_id = p.id);
 insert into public.rooms (name, description, icon, color, sort_order)
 select v.name, v.description, v.icon, v.color, v.sort_order
 from (values
-  ('Sala Principal / TV',   'La sala grande con la pantalla', 'tv',   '#4f46e5', 1),
-  ('Sala Lounge / Terraza', 'La sala chica junto a la terraza', 'sofa', '#ea580c', 2)
+  ('Sala Arriba', 'Planta alta', 'tv',   '#4f46e5', 1),
+  ('Sala Abajo',  'Planta baja', 'sofa', '#ea580c', 2)
 ) as v (name, description, icon, color, sort_order)
 where not exists (select 1 from public.rooms);
 

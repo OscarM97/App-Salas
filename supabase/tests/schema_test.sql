@@ -87,9 +87,9 @@ insert into tests.ids values
   ('dev_nuevo', '00000000-0000-0000-0000-00000000000e');
 insert into tests.ids select 'papa',  id from public.profiles where name = 'Papá';
 insert into tests.ids select 'mama',  id from public.profiles where name = 'Mamá';
-insert into tests.ids select 'hijo1', id from public.profiles where name = 'Hijo 1';
-insert into tests.ids select 'hijo2', id from public.profiles where name = 'Hijo 2';
-insert into tests.ids select 'hijo3', id from public.profiles where name = 'Hijo 3';
+insert into tests.ids select 'hijo1', id from public.profiles where name = 'Cecy';
+insert into tests.ids select 'hijo2', id from public.profiles where name = 'Jorge';
+insert into tests.ids select 'hijo3', id from public.profiles where name = 'Andy';
 insert into tests.ids select 'sala1', id from public.rooms where sort_order = 1;
 insert into tests.ids select 'sala2', id from public.rooms where sort_order = 2;
 
@@ -147,14 +147,14 @@ select tests.ok(public.is_admin(), 'Papá es admin');
 
 select tests.act_as('dev_hijo1');
 select public.join_household('mi-casa-2026');
-select tests.ok((public.sign_in(tests.id('hijo1'), '0000') ->> 'ok')::boolean, 'Hijo 1 entra con su PIN');
-select tests.ok(not public.is_admin(), 'Hijo 1 no es admin');
+select tests.ok((public.sign_in(tests.id('hijo1'), '0000') ->> 'ok')::boolean, 'Cecy entra con su PIN');
+select tests.ok(not public.is_admin(), 'Cecy no es admin');
 
 select tests.act_as('dev_hijo2');
 select public.join_household('mi-casa-2026');
-select tests.ok((public.sign_in(tests.id('hijo2'), '0000') ->> 'ok')::boolean, 'Hijo 2 entra con su PIN');
+select tests.ok((public.sign_in(tests.id('hijo2'), '0000') ->> 'ok')::boolean, 'Jorge entra con su PIN');
 
--- Bloqueo por PIN (perfil Hijo 3, desde el celular de Hijo 2)
+-- Bloqueo por PIN (perfil Andy, desde el celular de Jorge)
 select public.sign_in(tests.id('hijo3'), '1111'), public.sign_in(tests.id('hijo3'), '1112'),
        public.sign_in(tests.id('hijo3'), '1113'), public.sign_in(tests.id('hijo3'), '1114') \gset
 select tests.ok(public.sign_in(tests.id('hijo3'), '1115') ->> 'error' = 'locked', '5 PIN incorrectos → perfil bloqueado 5 min');
@@ -169,7 +169,7 @@ select id as r_hijo1 from public.create_reservation(tests.id('sala1'), tests.tom
                                                     '  Noche   de pelis ', 'Sofía') \gset
 insert into tests.ids values ('r_hijo1', :'r_hijo1');
 select tests.ok((select purpose from public.reservations where id = tests.id('r_hijo1')) = 'Noche de pelis',
-                'Hijo 1 reserva Sala 1 mañana 8pm–11pm (texto normalizado)');
+                'Cecy reserva Sala 1 mañana 8pm–11pm (texto normalizado)');
 
 select tests.act_as('dev_hijo2');
 select tests.expect_hint(
@@ -188,11 +188,11 @@ insert into tests.ids values ('r_hijo2_s2', :'r_hijo2_s2');
 select tests.ok(true, 'misma hora en la otra sala sí se permite');
 
 select tests.expect_hint(format($$select public.cancel_reservation(%L)$$, tests.id('r_hijo1')),
-  'forbidden', 'Hijo 2 no puede cancelar la reserva de Hijo 1');
+  'forbidden', 'Jorge no puede cancelar la reserva de Cecy');
 select tests.expect_hint(
   format($$select public.update_reservation(%L, %L, tests.tomorrow_at('18:00'), tests.tomorrow_at('19:00'))$$,
          tests.id('r_hijo1'), tests.id('sala1')),
-  'forbidden', 'Hijo 2 no puede editar la reserva de Hijo 1');
+  'forbidden', 'Jorge no puede editar la reserva de Cecy');
 
 select tests.act_as('dev_hijo1');
 select public.update_reservation(tests.id('r_hijo1'), tests.id('sala1'), tests.tomorrow_at('19:00'), tests.tomorrow_at('22:30'),
@@ -220,7 +220,7 @@ select tests.expect_hint(
 select tests.act_as('dev_papa');
 select public.cancel_reservation(tests.id('r_hijo2_s2'));
 select tests.ok((select cancelled_by from public.reservations where id = tests.id('r_hijo2_s2')) = tests.id('papa'),
-                'Papá (admin) cancela la reserva de Hijo 2');
+                'Papá (admin) cancela la reserva de Jorge');
 select tests.expect_hint(format($$select public.cancel_reservation(%L)$$, tests.id('r_hijo2_s2')),
   'already_cancelled', 'no se cancela dos veces');
 
@@ -255,11 +255,11 @@ select tests.ok((select string_agg(kind, ',' order by id) from public.activity) 
   ;
 reset role;
 select tests.ok(
-  private.activity_text(a, 'America/Mexico_City') = '✅ Hijo 1 acaba de separar Sala Principal / TV para mañana de 8pm a 11pm · Noche de pelis · con Sofía',
+  private.activity_text(a, 'America/Mexico_City') = '✅ Cecy acaba de separar Sala Arriba para mañana de 8pm a 11pm · Noche de pelis · con Sofía',
   'texto del aviso: ' || private.activity_text(a, 'America/Mexico_City'))
 from public.activity a order by id limit 1;
 select tests.ok(
-  private.activity_text(a, 'America/Mexico_City') like '❌ Papá canceló la reserva de Hijo 2 en Sala Lounge / Terraza (mañana de 8pm a 11pm)',
+  private.activity_text(a, 'America/Mexico_City') like '❌ Papá canceló la reserva de Jorge en Sala Abajo (mañana de 8pm a 11pm)',
   'texto de cancelación por admin: ' || private.activity_text(a, 'America/Mexico_City'))
 from public.activity a where kind = 'reservation.cancelled';
 select tests.ok(private.fmt_time('2026-11-07 06:00:00+00', 'America/Mexico_City') = '12am', 'medianoche = 12am');
@@ -304,11 +304,11 @@ select tests.ok((public.set_notification_settings(true, '123456789:AAHdqTcvCH1vG
 select tests.ok(public.get_notification_settings() ->> 'telegram_chat_id' = '-1001234567890', 'lee chat id');
 select tests.ok(public.test_notification() ->> 'reason' = 'pg_net_missing', 'sin pg_net la prueba de aviso lo indica');
 
--- Nuevo dispositivo con el nuevo código; Hijo 3 con PIN reseteado
+-- Nuevo dispositivo con el nuevo código; Andy con PIN reseteado
 select tests.act_as('dev_nuevo');
 select tests.ok(public.join_household('mi-casa-2026') ->> 'error' = 'invalid_code', 'el código viejo ya no sirve');
 select tests.ok((public.join_household('tacos-al-pastor') ->> 'ok')::boolean, 'el código nuevo sí');
--- (el bloqueo de Hijo 3 se limpió con reset_pin)
+-- (el bloqueo de Andy se limpió con reset_pin)
 select tests.ok((public.sign_in(tests.id('hijo3'), '7777') -> 'session' ->> 'must_change_pin')::boolean,
                 'PIN reseteado por admin funciona y pide cambio');
 select public.sign_out();
@@ -340,7 +340,7 @@ select tests.ok((select count(*) from net.calls) = 3, 'prueba + reserva → Tele
 select tests.ok((select url from net.calls order by id limit 1) like 'https://api.telegram.org/bot123456789:%/sendMessage',
                 'URL de Telegram correcta');
 select tests.ok((select body ->> 'text' from net.calls where url like 'https://api.telegram.org%' order by id desc limit 1)
-                = '✅ Papá acaba de separar Sala Lounge / Terraza para mañana de 3pm a 5pm · Junta',
+                = '✅ Papá acaba de separar Sala Abajo para mañana de 3pm a 5pm · Junta',
                 'mensaje de Telegram: ' || (select body ->> 'text' from net.calls order by id desc limit 1));
 select tests.ok((select body ->> 'event' from net.calls where url = 'https://hooks.example.com/salas') = 'reservation.created',
                 'el webhook recibe el evento en JSON');
@@ -349,5 +349,32 @@ select tests.act_as('dev_papa');
 select public.set_notification_settings(false, '', null, null);
 reset role;
 select tests.ok((select telegram_bot_token is null and not notify_enabled from private.secrets), 'avisos desactivados y token borrado');
+
+-- ---------------------------------------------------------------------------
+\echo '— Todo el día'
+-- ---------------------------------------------------------------------------
+set role authenticated;
+select tests.act_as('dev_papa');
+select id as r_allday from public.create_reservation(tests.id('sala2'), tests.tomorrow_at('00:00') + interval '1 day',
+                                                     tests.tomorrow_at('00:00') + interval '2 days', 'Cumpleaños', null) \gset
+insert into tests.ids values ('r_allday', :'r_allday');
+select tests.ok(true, 'se puede reservar todo el día (24 h)');
+select tests.expect_hint(
+  format($$select public.create_reservation(%L, tests.tomorrow_at('17:00') + interval '1 day', tests.tomorrow_at('22:00') + interval '1 day')$$, tests.id('sala2')),
+  'room_conflict', 'nadie puede separar unas horas de un día apartado completo');
+do $$
+begin
+  perform public.create_reservation(tests.id('sala2'), tests.tomorrow_at('17:00') + interval '1 day', tests.tomorrow_at('22:00') + interval '1 day');
+exception when others then
+  if sqlerrm not like '%Papá % todo el día.' then
+    raise exception 'FALLÓ: el mensaje de conflicto debería decir "todo el día": %', sqlerrm;
+  end if;
+  raise notice '✓ mensaje de conflicto: %', sqlerrm;
+end $$;
+reset role;
+select tests.ok(
+  private.activity_text(a, 'America/Mexico_City') like '✅ Papá acaba de separar Sala Abajo para % todo el día · Cumpleaños',
+  'aviso de Telegram: ' || private.activity_text(a, 'America/Mexico_City'))
+from public.activity a where reservation_id = tests.id('r_allday');
 
 \echo '✅ Todas las pruebas de base de datos pasaron'

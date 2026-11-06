@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fmtDuration, fmtRange, fmtTime, relativeDay, resolveRange, roundUp, timeAgo } from './time';
+import { fmtDuration, fmtDurationShort, fmtRange, fmtRangeSentence, fmtTime, isAllDay, relativeDay, resolveRange, roundUp, timeAgo } from './time';
 
 const at = (d: number, h: number, m = 0) => new Date(2026, 10, d, h, m); // nov 2026 (vie 6 = hoy)
 const NOW = at(6, 17, 10);
@@ -12,6 +12,22 @@ describe('formato de horas estilo familia', () => {
     expect(fmtTime(at(6, 12))).toBe('12pm');
     expect(fmtTime(at(6, 9, 5))).toBe('9:05am');
     expect(fmtRange(at(6, 20), at(7, 0))).toBe('8pm – 12am');
+  });
+
+  it('todo el día', () => {
+    expect(isAllDay(at(7, 0), at(8, 0))).toBe(true);
+    expect(fmtRange(at(7, 0), at(8, 0))).toBe('Todo el día');
+    expect(fmtRangeSentence(at(7, 0), at(8, 0))).toBe('todo el día');
+    // Desde ahora hasta medianoche no es "todo el día"
+    expect(isAllDay(at(6, 17), at(7, 0))).toBe(false);
+    expect(fmtRange(at(6, 17), at(7, 0))).toBe('5pm – 12am');
+  });
+
+  it('duraciones cortas para los botones', () => {
+    expect(fmtDurationShort(at(6, 20), at(6, 20, 30))).toBe('½ h');
+    expect(fmtDurationShort(at(6, 20), at(6, 21, 30))).toBe('1½ h');
+    expect(fmtDurationShort(at(6, 20), at(6, 22))).toBe('2 h');
+    expect(fmtDurationShort(at(6, 20), at(6, 20, 45))).toBe('45 min');
   });
 
   it('duraciones', () => {

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent, type ReactNode } from 'react';
-import { ArrowRight, CircleCheck, CircleExclamationPoint, Clock, MoonStar, Sparkles } from 'lucide-react';
+import { ArrowRight, CircleCheck, CircleExclamationPoint, MoonStar, Sparkles } from 'lucide-react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Profile, Reservation, Room, SessionProfile } from '@/types';
 import { backend } from '@/lib/backend';
@@ -14,6 +14,7 @@ import {
   fmtRange,
   fmtRangeSentence,
   fmtTime,
+  isAllDay,
   relativeDay,
   resolveRange,
   roundDown,
@@ -27,6 +28,7 @@ import { Label, TextInput } from './ui/Field';
 import { useToast } from './ui/Toast';
 import { DateStrip } from './DateStrip';
 import { RoomIcon } from './RoomIcon';
+import { TimePicker } from './TimePicker';
 import { cn } from './ui/cn';
 
 export interface BookingPrefill {
@@ -46,7 +48,6 @@ interface BookingFormProps {
 }
 
 const PURPOSES = ['🎬 Noche de pelis', '🎮 Videojuegos', '⚽ Partido', '📚 Estudio', '🎉 Reunión', '💬 Visita', '🍕 Cena'];
-const DURATIONS = [1, 2, 3, 4];
 
 function initialRange(prefill: BookingPrefill | undefined, editing: Reservation | null | undefined, now: Date) {
   if (editing) return { start: new Date(editing.starts_at), end: new Date(editing.ends_at) };
@@ -67,6 +68,7 @@ export function BookingForm({ me, rooms, profiles, now, editing, prefill, onDone
   const [date, setDate] = useState(toDateInput(init.start));
   const [startTime, setStartTime] = useState(toTimeInput(init.start));
   const [endTime, setEndTime] = useState(toTimeInput(init.end));
+  const [allDay, setAllDay] = useState(() => isAllDay(init.start, init.end));
   const [purpose, setPurpose] = useState(editing?.purpose ?? '');
   const [guests, setGuests] = useState(editing?.guests ?? '');
   const [serverError, setServerError] = useState<AppError | null>(null);
@@ -74,7 +76,7 @@ export function BookingForm({ me, rooms, profiles, now, editing, prefill, onDone
   const range = useMemo(() => resolveRange(date, startTime, endTime), [date, startTime, endTime]);
   const day = useMemo(() => dayStart(range.start), [range.start]);
   const windowEnd = useMemo(() => addDays(day, 3), [day]);
-  const { data: nearby = [], isFetching } = useReservationsRange(day, windowEnd);
+  const { data: nearby = [], isFetching, isLoading: nearbyLoading, isPlaceholderData } = useReservationsRange(day, windowEnd);
 
   useEffect(() => setServerError(null), [roomId, date, startTime, endTime]);
 
@@ -105,16 +107,36 @@ export function BookingForm({ me, rooms, profiles, now, editing, prefill, onDone
     return s && s.getTime() !== range.start.getTime() ? s : null;
   }, [conflict, nearby, editing?.id, roomId, range.start, durationMin]);
 
-  const applyStart = (s: Date, keepDuration = true) => {
-    const dur = keepDuration ? durationMin : 120;
+  const apply = (s: Date, e: Date, all: boolean) => {
     setDate(toDateInput(s));
     setStartTime(toTimeInput(s));
-    setEndTime(toTimeInput(new Date(s.getTime() + dur * MINUTE)));
+    setEndTime(toTimeInput(e));
+    setAllDay(all);
   };
 
-  const setDuration = (hours: number) => {
-    setEndTime(toTimeInput(new Date(range.start.getTime() + hours * HOUR)));
+  const applyStart = (s: Date) => apply(s, new Date(s.getTime() + durationMin * MINUTE), false);
+
+  // Cambiar de día conserva el horario; "todo el día" se mueve con el día.
+  const changeDate = (d: Date) => {
+    const newDay = dayStart(d);
+    const isToday = newDay.getTime() === dayStart(now).getTime();
+    if (allDay) {
+      apply(isToday ? roundDown(now, 5) : newDay, addDays(newDay, 1), true);
+      return;
+    }
+    const next = resolveRange(toDateInput(newDay), startTime, endTime);
+    if (isToday && !editingInProgress && next.start.getTime() < now.getTime() - 15 * MINUTE) {
+      const s = roundDown(now, 5);
+      apply(s, new Date(s.getTime() + Math.min(durationMin, 120) * MINUTE), false);
+      return;
+    }
+    setDate(toDateInput(newDay));
   };
+
+  const busyHere = useMemo(
+    () => nearby.filter((r) => r.room_id === roomId && r.id !== editing?.id),
+    [nearby, roomId, editing?.id],
+  );
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -203,46 +225,52 @@ export function BookingForm({ me, rooms, profiles, now, editing, prefill, onDone
           start={stripStart}
           count={21}
           now={now}
-          onChange={(d) => setDate(toDateInput(d))}
+          onChange={changeDate}
         />
       </div>
 
       {/* Horario */}
       <div>
-        <Label hint={<span className="font-semibold text-ink">{fmtDuration(range.start, range.end)}</span>}>Horario</Label>
-        <div className="grid grid-cols-2 gap-2">
-          <label className="block">
-            <span className="mb-1 block text-xs text-muted">Desde</span>
-            <TextInput type="time" step={900} value={startTime} onChange={(e) => e.target.value && setStartTime(e.target.value)} required />
-          </label>
-          <label className="block">
-            <span className="mb-1 block text-xs text-muted">Hasta</span>
-            <TextInput type="time" step={900} value={endTime} onChange={(e) => e.target.value && setEndTime(e.target.value)} required />
-          </label>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1.5">
-          {toDateInput(range.start) === toDateInput(now) && !editing ? (
-            <Chip onClick={() => applyStart(roundDown(now, 15))} icon={<Clock className="size-3.5" />}>
-              Desde ahora
-            </Chip>
-          ) : null}
-          {DURATIONS.map((h) => (
-            <Chip key={h} active={durationMin === h * 60} onClick={() => setDuration(h)}>
-              {h} h
-            </Chip>
-          ))}
-          <Chip
-            active={endTime === '00:00'}
-            onClick={() => setEndTime('00:00')}
-            icon={<MoonStar className="size-3.5" />}
-          >
-            Hasta 12am
-          </Chip>
-        </div>
-        {range.nextDay ? (
+        <Label hint={<span className="font-semibold text-ink">{allDay ? 'Todo el día' : fmtDuration(range.start, range.end)}</span>}>
+          Horario
+        </Label>
+        <TimePicker
+          day={day}
+          start={range.start}
+          end={range.end}
+          allDay={allDay}
+          busy={busyHere}
+          profiles={profiles}
+          now={now}
+          lockStart={editingInProgress}
+          loading={nearbyLoading || isPlaceholderData}
+          onChange={apply}
+        />
+        {!allDay && range.nextDay ? (
           <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
             <MoonStar className="size-3.5" aria-hidden /> Termina al día siguiente ({relativeDay(range.end, now)} {fmtTime(range.end)})
           </p>
+        ) : null}
+        {!allDay ? (
+          <details className="mt-3">
+            <summary className="cursor-pointer text-sm font-semibold text-brand">Escribir una hora exacta</summary>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="mb-1 block text-xs text-muted">Desde</span>
+                <TextInput
+                  type="time"
+                  step={300}
+                  value={startTime}
+                  disabled={editingInProgress}
+                  onChange={(e) => e.target.value && setStartTime(e.target.value)}
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs text-muted">Hasta</span>
+                <TextInput type="time" step={300} value={endTime} onChange={(e) => e.target.value && setEndTime(e.target.value)} />
+              </label>
+            </div>
+          </details>
         ) : null}
       </div>
 
@@ -264,7 +292,7 @@ export function BookingForm({ me, rooms, profiles, now, editing, prefill, onDone
                     Usar {otherFreeRoom.name} (libre)
                   </Button>
                 ) : null}
-                {nextSlot ? (
+                {nextSlot && !allDay ? (
                   <Button size="sm" variant="secondary" onClick={() => applyStart(nextSlot)} icon={<ArrowRight className="size-4" />}>
                     {relativeDay(nextSlot, now) === relativeDay(range.start, now) ? '' : `${relativeDay(nextSlot, now)} `}
                     {fmtRange(nextSlot, new Date(nextSlot.getTime() + durationMin * MINUTE))}

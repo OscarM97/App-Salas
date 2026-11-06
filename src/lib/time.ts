@@ -25,14 +25,33 @@ export function fmtTime(value: string | Date): string {
   return `${h12}${m ? `:${String(m).padStart(2, '0')}` : ''}${h < 12 ? 'am' : 'pm'}`;
 }
 
-/** "8pm – 12am" */
+/** Reserva de 12am a 12am del día siguiente. */
+export function isAllDay(start: string | Date, end: string | Date): boolean {
+  const s = toDate(start);
+  const e = toDate(end);
+  return s.getHours() === 0 && s.getMinutes() === 0 && e.getTime() === addDays(s, 1).getTime();
+}
+
+/** "8pm – 12am" o "Todo el día" */
 export function fmtRange(start: string | Date, end: string | Date): string {
+  if (isAllDay(start, end)) return 'Todo el día';
   return `${fmtTime(start)} – ${fmtTime(end)}`;
 }
 
-/** "de 8pm a 12am" */
+/** "de 8pm a 12am" o "todo el día" */
 export function fmtRangeSentence(start: string | Date, end: string | Date): string {
+  if (isAllDay(start, end)) return 'todo el día';
   return `de ${fmtTime(start)} a ${fmtTime(end)}`;
+}
+
+/** Para botones: "½ h", "1 h", "1½ h", "45 min" */
+export function fmtDurationShort(start: string | Date, end: string | Date): string {
+  const mins = Math.round(differenceInMinutes(toDate(end), toDate(start)));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (m === 0) return `${h} h`;
+  if (m === 30) return h ? `${h}½ h` : '½ h';
+  return h ? `${h} h ${m}` : `${m} min`;
 }
 
 /** "2 h", "1 h 30 min", "45 min" */

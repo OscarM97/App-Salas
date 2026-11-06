@@ -21,7 +21,7 @@ import type {
 import { DEMO_PIN } from '@/config';
 import { AppError } from '../errors';
 import { findConflicts, statusOf } from '../reservations';
-import { HOUR, MINUTE, addDays, dayStart, fmtTime, relativeDay, roundDown } from '../time';
+import { HOUR, MINUTE, addDays, dayStart, fmtRangeSentence, relativeDay, roundDown } from '../time';
 import type { Backend } from './types';
 
 /**
@@ -227,7 +227,7 @@ export class DemoBackend implements Backend {
       const owner = data.profiles.find((p) => p.id === c.profile_id)?.name ?? 'alguien';
       throw new AppError(
         'room_conflict',
-        `${room.name} ya está ocupada por ${owner} ${relativeDay(c.starts_at, this.now())} de ${fmtTime(c.starts_at)} a ${fmtTime(c.ends_at)}.`,
+        `${room.name} ya está ocupada por ${owner} ${relativeDay(c.starts_at, this.now())} ${fmtRangeSentence(c.starts_at, c.ends_at)}.`,
         { reservation_id: c.id, profile_id: c.profile_id, owner_name: owner, starts_at: c.starts_at, ends_at: c.ends_at, purpose: c.purpose },
       );
     }
@@ -650,13 +650,13 @@ export class DemoBackend implements Backend {
     const profiles: Profile[] = [
       { id: uid(), name: 'Papá', emoji: '👨', color: '#2563eb', role: 'admin', sort_order: 1, active: true },
       { id: uid(), name: 'Mamá', emoji: '👩', color: '#db2777', role: 'admin', sort_order: 2, active: true },
-      { id: uid(), name: 'Hijo 1', emoji: '🧑', color: '#d97706', role: 'member', sort_order: 3, active: true },
-      { id: uid(), name: 'Hijo 2', emoji: '👦', color: '#7c3aed', role: 'member', sort_order: 4, active: true },
-      { id: uid(), name: 'Hijo 3', emoji: '👧', color: '#0891b2', role: 'member', sort_order: 5, active: true },
+      { id: uid(), name: 'Cecy', emoji: '🧑', color: '#d97706', role: 'member', sort_order: 3, active: true },
+      { id: uid(), name: 'Jorge', emoji: '👦', color: '#7c3aed', role: 'member', sort_order: 4, active: true },
+      { id: uid(), name: 'Andy', emoji: '👧', color: '#0891b2', role: 'member', sort_order: 5, active: true },
     ];
     const rooms: Room[] = [
-      { id: uid(), name: 'Sala Principal / TV', description: 'La sala grande con la pantalla', icon: 'tv', color: '#4f46e5', sort_order: 1, active: true },
-      { id: uid(), name: 'Sala Lounge / Terraza', description: 'La sala chica junto a la terraza', icon: 'sofa', color: '#ea580c', sort_order: 2, active: true },
+      { id: uid(), name: 'Sala Arriba', description: 'Planta alta', icon: 'tv', color: '#4f46e5', sort_order: 1, active: true },
+      { id: uid(), name: 'Sala Abajo', description: 'Planta baja', icon: 'sofa', color: '#ea580c', sort_order: 2, active: true },
     ];
     const data: DemoData = {
       household: { name: 'Casa (demo)', timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'America/Mexico_City' },
