@@ -26,7 +26,22 @@ jobs:
             echo "::warning::Faltan los secrets SUPABASE_URL / SUPABASE_ANON_KEY; no se hizo ping."
             exit 0
           fi
-          curl -fsS -X POST "$SUPABASE_URL/rest/v1/rpc/ping" \
-            -H "apikey: $SUPABASE_ANON_KEY" \
-            -H "Content-Type: application/json" \
-            -d '{}'
+          # Tolerar valores pegados con espacios, comillas o con "NOMBRE=" adelante.
+          url=$(printf '%s' "$SUPABASE_URL" | tr -d '[:space:]"'"'")
+          url="https://${url#*https://}"; url="${url%/}"
+          key=$(printf '%s' "$SUPABASE_ANON_KEY" | tr -d '[:space:]"'"'")
+          key="${key##*=}"
+          case "$key" in
+            sb_publishable_*) tipo="Publishable key ✓" ;;
+            sb_secret_*) tipo="SECRET key ✗ (usa la Publishable, no la secreta)" ;;
+            eyJ*) tipo="anon key (formato antiguo)" ;;
+            *) tipo="no reconocida ✗" ;;
+          esac
+          echo "Proyecto: ${url#https://} · Llave: $tipo, ${#key} caracteres"
+          status=$(curl -sS -o resp.txt -w '%{http_code}' -X POST "$url/rest/v1/rpc/ping" \
+            -H "apikey: $key" -H "Content-Type: application/json" -d '{}')
+          echo "Respuesta HTTP $status:"; cat resp.txt; echo
+          if [ "$status" != "200" ]; then
+            echo "::error::Supabase rechazó el ping (HTTP $status). Revisa que SUPABASE_ANON_KEY sea la Publishable key (sb_publishable_…) o la anon key."
+            exit 1
+          fi
