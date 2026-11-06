@@ -31,6 +31,9 @@ jobs:
           url="https://${url#*https://}"; url="${url%/}"
           key=$(printf '%s' "$SUPABASE_ANON_KEY" | tr -d '[:space:]"'"'")
           key="${key##*=}"
+          # Si la llave quedó pegada junto con otro texto, quedarse solo con ella.
+          found=$(printf '%s' "$SUPABASE_ANON_KEY" | grep -oE 'sb_publishable_[A-Za-z0-9_-]+|eyJ[A-Za-z0-9_.-]+' | head -1 || true)
+          [ -n "$found" ] && key="$found"
           case "$key" in
             sb_publishable_*) tipo="Publishable key ✓" ;;
             sb_secret_*) tipo="SECRET key ✗ (usa la Publishable, no la secreta)" ;;
