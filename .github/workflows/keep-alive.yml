@@ -3,6 +3,7 @@
 # se va de vacaciones. Configura en GitHub → Settings → Secrets and variables
 # → Actions:  SUPABASE_URL  y  SUPABASE_ANON_KEY  (los mismos que en Vercel).
 name: Mantener Supabase activo
+# (Ejecútalo a mano desde la pestaña Actions → "Run workflow" para probarlo.)
 
 on:
   schedule:
