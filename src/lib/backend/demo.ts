@@ -86,6 +86,18 @@ function memoryStore(): KeyValueStore {
   };
 }
 
+/** localStorage puede no existir o lanzar error (modo privado, iframes). */
+function safeLocalStorage(): KeyValueStore {
+  try {
+    const s = window.localStorage;
+    s.setItem('__salas_test__', '1');
+    s.removeItem('__salas_test__');
+    return s;
+  } catch {
+    return memoryStore();
+  }
+}
+
 function uid(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
   return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
@@ -112,13 +124,17 @@ export class DemoBackend implements Backend {
   private channel: BroadcastChannel | null = null;
 
   constructor(opts: DemoOptions = {}) {
-    this.storage = opts.storage ?? (typeof localStorage !== 'undefined' ? localStorage : memoryStore());
+    this.storage = opts.storage ?? (typeof window !== 'undefined' ? safeLocalStorage() : memoryStore());
     this.now = opts.now ?? (() => new Date());
     this.latency = opts.latencyMs ?? 80;
     if (!this.storage.getItem(DATA_KEY)) this.write(this.seed(opts.seed ?? true));
     if ((opts.broadcast ?? true) && typeof BroadcastChannel !== 'undefined') {
-      this.channel = new BroadcastChannel(CHANNEL);
-      this.channel.onmessage = (ev: MessageEvent<ChangeEvent>) => this.listeners.forEach((l) => l(ev.data));
+      try {
+        this.channel = new BroadcastChannel(CHANNEL);
+        this.channel.onmessage = (ev: MessageEvent<ChangeEvent>) => this.listeners.forEach((l) => l(ev.data));
+      } catch {
+        this.channel = null; // sin sincronización entre pestañas; todo lo demás funciona
+      }
     }
   }
 

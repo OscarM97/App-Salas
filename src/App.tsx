@@ -97,7 +97,7 @@ function MainApp({ me: sessionMe }: { me: SessionProfile }) {
   useEffect(() => {
     const check = () => {
       if (/[?&]nueva=1/.test(window.location.hash)) {
-        window.history.replaceState(window.history.state, '', '#/inicio');
+        window.history.replaceState(window.history.state, '', '#inicio');
         openNew();
       }
     };

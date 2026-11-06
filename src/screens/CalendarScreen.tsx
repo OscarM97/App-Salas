@@ -21,7 +21,13 @@ export function CalendarScreen() {
   const rooms = useRooms();
   const profiles = useProfiles();
   const upcoming = useUpcoming();
-  const [mode, setModeState] = useState<Mode>(() => (sessionStorage.getItem(MODE_KEY) as Mode) || 'day');
+  const [mode, setModeState] = useState<Mode>(() => {
+    try {
+      return (sessionStorage.getItem(MODE_KEY) as Mode) || 'day';
+    } catch {
+      return 'day';
+    }
+  });
   const [date, setDate] = useState(() => dayStart(new Date()));
 
   const setMode = (m: Mode) => {

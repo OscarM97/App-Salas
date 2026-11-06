@@ -13,11 +13,11 @@ function subscribe(cb: () => void) {
   return () => window.removeEventListener('hashchange', cb);
 }
 
-/** Router mínimo por hash (#/calendario): funciona en cualquier hosting estático sin reglas extra. */
+/** Router mínimo por hash (#calendario): funciona en cualquier hosting estático sin reglas extra. */
 export function useHashRoute(): [Route, (r: Route) => void] {
   const route = useSyncExternalStore(subscribe, read, () => 'inicio' as Route);
   const navigate = useCallback((r: Route) => {
-    if (read() !== r) window.location.hash = `/${r}`;
+    if (read() !== r) window.location.hash = r;
     window.scrollTo({ top: 0 });
   }, []);
   return [route, navigate];

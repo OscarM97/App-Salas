@@ -8,6 +8,7 @@ import { DEMO_FAMILY_CODE } from '@/lib/backend/demo';
 import { errorMessage } from '@/lib/errors';
 import { fmtTime } from '@/lib/time';
 import { qk, useProfiles } from '@/hooks/queries';
+import appIcon from '@/assets/icon.svg';
 import { PinPad } from '@/components/PinPad';
 import { Avatar } from '@/components/ui/Avatar';
 import { Button } from '@/components/ui/Button';
@@ -20,7 +21,7 @@ function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="safe-top safe-bottom mx-auto flex min-h-dvh max-w-md flex-col px-5 py-8">
       <div className="mb-8 flex items-center gap-2 text-muted">
-        <img src="/icons/icon.svg" alt="" className="size-8 rounded-xl" />
+        <img src={appIcon} alt="" className="size-8 rounded-xl" />
         <span className="font-semibold">{APP_NAME}</span>
         {backend.mode === 'demo' ? <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-xs font-semibold text-amber-600">Demo</span> : null}
       </div>

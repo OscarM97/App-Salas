@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Download, Share, Smartphone, X } from 'lucide-react';
+import { IS_EMBED } from '@/config';
 import { useInstallPrompt } from '@/hooks/useInstallPrompt';
 import { Button } from './ui/Button';
 
@@ -16,6 +17,7 @@ export function InstallCard({ force = false }: { force?: boolean }) {
     }
   });
 
+  if (IS_EMBED) return null;
   if (installed) return force ? <p className="text-sm text-free">✓ La app ya está instalada en este dispositivo.</p> : null;
   if (!force && (dismissed || (!canPrompt && platform !== 'ios'))) return null;
 

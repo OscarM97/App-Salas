@@ -6,9 +6,13 @@ import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// VITE_EMBED=true → demo en un solo archivo (rutas relativas, sin service worker).
+const embed = process.env.VITE_EMBED === 'true';
+
 const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8')) as { version: string };
 
 export default defineConfig({
+  base: embed ? './' : '/',
   define: {
     __APP_VERSION__: JSON.stringify(pkg.version),
   },
@@ -17,7 +21,8 @@ export default defineConfig({
   },
   build: {
     target: 'es2022',
-    rolldownOptions: {
+    assetsInlineLimit: embed ? 100_000 : 4096,
+    rolldownOptions: embed ? {} : {
       output: {
         // Librerías en chunks separados: al actualizar la app los celulares
         // solo descargan el código que cambió.
@@ -35,6 +40,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
+      disable: embed,
       registerType: 'prompt',
       includeAssets: ['favicon.svg', 'icons/*.png', 'icons/*.svg'],
       manifest: {
@@ -56,8 +62,8 @@ export default defineConfig({
           { src: '/icons/maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
         shortcuts: [
-          { name: 'Nueva reserva', short_name: 'Reservar', url: '/#/inicio?nueva=1', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
-          { name: 'Calendario', url: '/#/calendario', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'Nueva reserva', short_name: 'Reservar', url: '/#inicio?nueva=1', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
+          { name: 'Calendario', url: '/#calendario', icons: [{ src: '/icons/icon-192.png', sizes: '192x192' }] },
         ],
       },
       workbox: {
