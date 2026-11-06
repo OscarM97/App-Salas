@@ -299,7 +299,7 @@ select tests.expect_hint($$select public.set_family_code('corto')$$, 'invalid_in
 select public.set_family_code('Tacos-Al-Pastor');
 select tests.expect_hint($$select public.set_notification_settings(true, 'token-malo', null, null)$$, 'invalid_input', 'valida token de Telegram');
 select tests.expect_hint($$select public.set_notification_settings(true, null, null, 'http://inseguro.com')$$, 'invalid_input', 'webhook debe ser https');
-select tests.ok((public.set_notification_settings(true, '123456789:AAHdqTcvCH1vGWJxfSeofSAs0K5PALDsaw', '-1001234567890', null)
+select tests.ok((public.set_notification_settings(true, '12345:token_falso_solo_para_pruebas', '-1001234567890', null)
                  ->> 'has_telegram_token')::boolean, 'guarda Telegram (el token nunca se devuelve)');
 select tests.ok(public.get_notification_settings() ->> 'telegram_chat_id' = '-1001234567890', 'lee chat id');
 select tests.ok(public.test_notification() ->> 'reason' = 'pg_net_missing', 'sin pg_net la prueba de aviso lo indica');
@@ -337,7 +337,7 @@ select public.set_notification_settings(true, null, '-1001234567890', 'https://h
 select public.create_reservation(tests.id('sala2'), tests.tomorrow_at('15:00'), tests.tomorrow_at('17:00'), 'Junta', null);
 reset role;
 select tests.ok((select count(*) from net.calls) = 3, 'prueba + reserva → Telegram y Webhook');
-select tests.ok((select url from net.calls order by id limit 1) like 'https://api.telegram.org/bot123456789:%/sendMessage',
+select tests.ok((select url from net.calls order by id limit 1) like 'https://api.telegram.org/bot12345:token_falso_solo_para_pruebas/sendMessage',
                 'URL de Telegram correcta');
 select tests.ok((select body ->> 'text' from net.calls where url like 'https://api.telegram.org%' order by id desc limit 1)
                 = '✅ Papá acaba de separar Sala Abajo para mañana de 3pm a 5pm · Junta',
