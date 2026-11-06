@@ -1,7 +1,7 @@
 {
   "name": "salas-casa",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "description": "PWA para que la familia reserve las salas de la casa sin traslapes.",
   "scripts": {

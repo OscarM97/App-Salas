@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { CalendarDays, House, ListChecks, Plus, Activity as ActivityIcon, RefreshCw, WifiOff } from 'lucide-react';
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import type { LiveStatus, SessionProfile } from '@/types';
@@ -128,17 +129,35 @@ export function UpdatePrompt() {
       if (reg) setInterval(() => void reg.update(), 60 * 60 * 1000);
     },
   });
+  const [updating, setUpdating] = useState(false);
+
+  const update = () => {
+    setUpdating(true);
+    // Recargar en cuanto la versión nueva tome el control…
+    navigator.serviceWorker?.addEventListener('controllerchange', () => window.location.reload(), { once: true });
+    void updateServiceWorker(true);
+    // …y recargar de todos modos si ese aviso no llega (p. ej. la app está abierta en otra pestaña).
+    window.setTimeout(() => window.location.reload(), 1500);
+  };
+
   if (!needRefresh) return null;
   return (
-    <div className="fixed inset-x-3 bottom-24 z-40 mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink p-3 text-sm text-bg shadow-xl">
-      <RefreshCw className="size-4 shrink-0" aria-hidden />
-      <span className="flex-1">Hay una versión nueva de la app.</span>
-      <button type="button" className="font-semibold text-bg/70" onClick={() => setNeedRefresh(false)}>
-        Luego
-      </button>
-      <button type="button" className="rounded-xl bg-bg px-3 py-1.5 font-semibold text-ink" onClick={() => void updateServiceWorker(true)}>
-        Actualizar
-      </button>
+    <div
+      role="status"
+      className="fixed inset-x-3 bottom-[calc(6.75rem+env(safe-area-inset-bottom))] z-[70] mx-auto flex max-w-md items-center gap-3 rounded-2xl bg-ink p-3 text-sm text-bg shadow-xl"
+    >
+      <RefreshCw className={cn('size-4 shrink-0', updating && 'animate-spin')} aria-hidden />
+      <span className="flex-1">{updating ? 'Actualizando…' : 'Hay una versión nueva de la app.'}</span>
+      {updating ? null : (
+        <>
+          <button type="button" className="px-1 py-2 font-semibold text-bg/70" onClick={() => setNeedRefresh(false)}>
+            Luego
+          </button>
+          <button type="button" className="rounded-xl bg-bg px-4 py-2 font-semibold text-ink" onClick={update}>
+            Actualizar
+          </button>
+        </>
+      )}
     </div>
   );
 }
