@@ -1,13 +1,14 @@
-# Supabase (plan gratuito) pausa los proyectos que pasan ~7 días sin uso.
-# Este workflow hace un "ping" cada 3 días para que eso no pase si la familia
-# se va de vacaciones. Configura en GitHub → Settings → Secrets and variables
+# Supabase (plan gratuito) pausa los proyectos con poca actividad de base de
+# datos en una semana. Este workflow hace un "ping" 4 veces al día (cada ping
+# escribe un latido en la base de datos) para que eso no pase si la familia
+# no usa la app un tiempo. Configura en GitHub → Settings → Secrets and variables
 # → Actions:  SUPABASE_URL  y  SUPABASE_ANON_KEY  (los mismos que en Vercel).
 name: Mantener Supabase activo
 # (Ejecútalo a mano desde la pestaña Actions → "Run workflow" para probarlo.)
 
 on:
   schedule:
-    - cron: '17 15 */3 * *'
+    - cron: '17 */6 * * *'
   workflow_dispatch:
 
 permissions: {}

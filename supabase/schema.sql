@@ -175,6 +175,13 @@ create table if not exists private.join_attempts (
 );
 create index if not exists join_attempts_created_at_idx on private.join_attempts (created_at);
 
+-- Latido del keep-alive: una escritura real para que Supabase vea actividad.
+create table if not exists private.heartbeat (
+  id         smallint primary key default 1 check (id = 1),
+  last_ping  timestamptz not null default now(),
+  pings      bigint not null default 0
+);
+
 
 -- =============================================================================
 -- 5. Funciones auxiliares
@@ -1141,13 +1148,25 @@ end
 $$;
 
 
--- Mantener vivo el proyecto gratuito (Supabase pausa proyectos sin uso ~7 días).
--- La llama .github/workflows/keep-alive.yml. No expone ningún dato.
+-- Mantener vivo el proyecto gratuito: Supabase pausa los proyectos con poca
+-- actividad de base de datos en una semana. La llama .github/workflows/keep-alive.yml
+-- varias veces al día: escribe un latido y lee las tablas de la app (actividad
+-- real), pero solo devuelve "pong": no expone ningún dato de la familia.
 create or replace function public.ping()
 returns text
-language sql stable set search_path = ''
+language plpgsql volatile security definer set search_path = ''
 as $$
-  select 'pong ' || to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SSOF')
+declare
+  v_pings bigint;
+  v_dummy bigint;
+begin
+  insert into private.heartbeat (id, last_ping, pings) values (1, now(), 1)
+  on conflict (id) do update set last_ping = now(), pings = private.heartbeat.pings + 1
+  returning pings into v_pings;
+  select count(*) into v_dummy from public.rooms;
+  select count(*) into v_dummy from public.reservations where ends_at > now();
+  return 'pong ' || to_char(now(), 'YYYY-MM-DD"T"HH24:MI:SSOF') || ' · latido #' || v_pings;
+end
 $$;
 
 

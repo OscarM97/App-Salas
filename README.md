@@ -123,11 +123,13 @@ Eventos: `reservation.created`, `reservation.updated`, `reservation.cancelled`, 
 
 ### 5) (Recomendado) Que Supabase no se “duerma”
 
-El plan gratis de Supabase **pausa proyectos sin uso por ~7 días** (por ejemplo, si se van de vacaciones). Para evitarlo, este repo trae el workflow [`keep-alive.yml`](.github/workflows/keep-alive.yml), que hace un *ping* cada 3 días:
+El plan gratis de Supabase **pausa los proyectos con poca actividad de base de datos en una semana** (por ejemplo, si se van de vacaciones). Para evitarlo, este repo trae el workflow [`keep-alive.yml`](.github/workflows/keep-alive.yml), que hace un *ping* **4 veces al día**; cada ping escribe un "latido" en la base de datos (actividad real, sin exponer datos):
 
-GitHub → tu repo → **Settings → Secrets and variables → Actions → New repository secret**, y agrega `SUPABASE_URL` y `SUPABASE_ANON_KEY` (los mismos valores de Vercel). Puedes probarlo en **Actions → Mantener Supabase activo → Run workflow**.
+GitHub → tu repo → **Settings → Secrets and variables → Actions → New repository secret**, y agrega `SUPABASE_URL` y `SUPABASE_ANON_KEY` (los mismos valores de Vercel). Puedes probarlo en **Actions → Mantener Supabase activo → Run workflow**: la respuesta debe decir `pong … · latido #N`.
 
-> Si se llega a pausar: Supabase → tu proyecto → **Restore**. No se pierde nada.
+> **¿Instalaste antes del 18-nov-2026?** Corre una vez [`supabase/updates/2026-11-18-latido.sql`](supabase/updates/2026-11-18-latido.sql) en el SQL Editor para activar el latido.
+>
+> Supabase no publica cuánta actividad es "suficiente", así que esto reduce mucho el riesgo pero no es una garantía: lo único garantizado es el plan Pro. Si se llega a pausar: Supabase → tu proyecto → **Restore / Resume project**. No se pierde nada.
 
 ---
 
@@ -220,7 +222,7 @@ Para forzar el modo demo aunque tengas llaves: `VITE_DEMO=true npm run dev`.
 
 ## 💸 Límites del plan gratuito (de sobra para una familia)
 
-- **Supabase Free:** 500 MB de base de datos (≈ millones de reservas), 50 000 usuarios activos al mes, Realtime incluido. Se pausa tras ~7 días sin uso → ver paso 5.
+- **Supabase Free:** 500 MB de base de datos (≈ millones de reservas), 50 000 usuarios activos al mes, Realtime incluido. Se pausa si tiene poca actividad en una semana → ver paso 5.
 - **Vercel Hobby:** gratis para proyectos personales no comerciales; HTTPS y dominio `*.vercel.app` incluidos.
 - **Telegram Bot API:** gratis.
 

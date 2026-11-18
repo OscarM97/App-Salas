@@ -103,7 +103,9 @@ select tests.ok((select count(*) from pg_publication_tables where pubname = 'sup
 set role anon;
 select tests.expect_state('select count(*) from public.reservations', '42501', 'anon no puede leer reservas');
 select tests.expect_state($$select public.join_household('mi-casa-2026')$$, '42501', 'anon no puede ejecutar RPC');
-select tests.ok(public.ping() like 'pong %', 'anon solo puede hacer ping (keep-alive)');
+select tests.ok(public.ping() like 'pong % · latido #1', 'anon puede hacer ping (keep-alive) y escribe un latido');
+select tests.ok(public.ping() like 'pong % · latido #2', 'cada ping suma un latido');
+select tests.expect_state('select * from private.heartbeat', '42501', 'anon no puede leer la tabla del latido');
 reset role;
 
 set role authenticated;
